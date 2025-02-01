@@ -1,3 +1,3 @@
-[submodule "app/src/main/res/imgData"]
-	path = app/src/main/res/imgData
+[submodule "app/src/main/assets/imgData"]
+	path = app/src/main/assets/imgData
 	url = https://github.com/jeffpeng3/MyPicDB
