@@ -1,10 +1,10 @@
 package dev.nightfeather.its_mypic
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
@@ -23,8 +23,8 @@ class MainActivity : ComponentActivity() {
                     Button(
                         modifier = Modifier.padding(innerPadding),
                         onClick = {
-                            if (Utils.checkOverlayPermission(this)) {
-                                Utils.startOverlayService(this)
+                            if (Utils.Permission.checkOverlayPermission(this)) {
+                                Utils.Overlay.startService(this)
                             }
                         }
                     ) {
@@ -32,8 +32,11 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
-            Utils.checkOverlayPermission(this)
-            Utils.checkNotificationPermission(this)
+            Utils.Permission.checkOverlayPermission(this)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                Utils.Permission.CheckNotificationPermission(this)
+            }
         }
     }
 }

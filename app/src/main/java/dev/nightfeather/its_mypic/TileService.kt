@@ -18,8 +18,8 @@ class TileService: TileService() {
 
     override fun onClick() {
         super.onClick()
-        if (Utils.checkOverlayPermission(this)) {
-            Utils.startOverlayService(this, true);
+        if (Utils.Permission.checkOverlayPermission(this)) {
+            Utils.Overlay.startService(this, true);
         }
     }
 

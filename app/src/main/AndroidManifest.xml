@@ -23,6 +23,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
+            android:windowSoftInputMode="stateVisible"
             android:theme="@style/Theme.ItsMyPicAndroid">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -33,6 +34,7 @@
         <service
             android:name=".OverlayService"
             android:foregroundServiceType="specialUse"
+            android:windowSoftInputMode="stateVisible"
             android:exported="false">
             <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Allow user to bring overlay up handy."/>
