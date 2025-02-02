@@ -5,10 +5,8 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.graphics.PixelFormat
 import android.os.IBinder
 import android.view.Gravity
@@ -17,7 +15,6 @@ import android.view.View
 import android.view.View.OnClickListener
 import android.view.View.OnTouchListener
 import android.view.WindowManager
-import androidx.activity.compose.BackHandler
 import androidx.activity.setViewTreeOnBackPressedDispatcherOwner
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
@@ -25,13 +22,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -39,7 +33,9 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -49,13 +45,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Recomposer
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -64,6 +58,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.AndroidUiDispatcher
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.compositionContext
@@ -73,7 +68,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
@@ -99,14 +93,19 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
     private var dialogView: ComposeView? = null
     private var lifecycleOwner: ComposeViewLifecycleOwner? = null
     private var imageData: List<ImageData> = listOf()
-    private var imageSearchResult: List<ImageData> = listOf()
 
     @Composable
     @OptIn(ExperimentalMaterial3Api::class)
     private fun ImageBrowseDialog(isSingle: Boolean) {
         val localContext = LocalContext.current
+        val localClipboardManager = LocalClipboardManager.current
         val localConfig = LocalConfiguration.current
+
         val screenWidth = localConfig.screenWidthDp
+
+        val searchViewModel = SearchViewModel(imageData)
+
+        val coroutineScope = rememberCoroutineScope()
 
         val interactionSource = remember { MutableInteractionSource() }
         val fadeInAnimateState = remember {
@@ -114,9 +113,10 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
                 targetState = true
             }
         }
-        var searchText by remember { mutableStateOf("是又怎樣") }
-        val searchResultScrollState = rememberScrollState()
-        val coroutineScope = rememberCoroutineScope()
+
+        val searchResultScrollState = rememberLazyListState()
+        val searchQueryText by searchViewModel.queryText.collectAsState()
+        val imageSearchResult by searchViewModel.searchResult.collectAsState()
 
 
         AnimatedVisibility(
@@ -147,16 +147,13 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
                         }
                 )
                 Column {
-                    Row(
-                        modifier = Modifier
-                            .horizontalScroll(
-                                state = searchResultScrollState
-                            )
-                            .padding(
-                                horizontal = (screenWidth * 0.04F).dp
-                            )
+                    LazyRow(
+                        state = searchResultScrollState,
+                        contentPadding = PaddingValues(
+                            horizontal = (screenWidth * 0.04F).dp
+                        )
                     ) {
-                        for (searchData in imageSearchResult) {
+                        itemsIndexed(imageSearchResult) { _, searchData ->
                             Box(
                                 modifier = Modifier
                                     .padding(
@@ -172,6 +169,23 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
                                         shape = RoundedCornerShape(16.dp)
                                     )
                                     .background(Color(0xFF565e71))
+                                    .clickable {
+                                        coroutineScope.launch {
+                                            withContext(Dispatchers.IO) {
+                                                Utils.Clipboard.copyImageFromUrl(
+                                                    context = localContext,
+                                                    clipboardManager = localClipboardManager.nativeClipboard,
+                                                    url = searchData.toUrl(),
+                                                    label = searchData.text
+                                                )
+                                            }
+                                            if (isSingle) {
+                                                stopService()
+                                            } else {
+                                                disposeOverlay()
+                                            }
+                                        }
+                                    }
                             ) {
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally
@@ -199,13 +213,8 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
                         }
                     }
                     TextField(
-                        value = searchText,
-                        onValueChange = {
-                            if (it.length > 0) {
-                                imageSearchResult = Utils.StringSearch.fuzzySearch(it, imageData)
-                            }
-                            searchText = it
-                        },
+                        value = searchQueryText,
+                        onValueChange = searchViewModel::onQueryTextChanged,
                         singleLine = true,
                         textStyle = TextStyle(
                             fontSize = 18.sp
@@ -254,17 +263,10 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
                                 elevation = 4.dp,
                                 shape = RoundedCornerShape(60.dp)
                             )
+                            .height(58.dp)
                             .fillMaxWidth()
                     )
                 }
-            }
-        }
-
-        BackHandler {
-            if (isSingle) {
-                stopService()
-            } else {
-                disposeOverlay()
             }
         }
     }
@@ -274,12 +276,12 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
         lifecycleOwner?.onDestroy()
         lifecycleOwner = null
         dialogView = null
-        windowManager = null
     }
 
     private fun stopService() {
         disposeOverlay()
         stopForeground(STOP_FOREGROUND_REMOVE)
+        windowManager = null
         isRunning = false
     }
 
@@ -297,12 +299,13 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
             intent?.action == Action.SHOW_OVERLAY_SINGLE &&
             !isRunning
         ) {
+            windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager?
+
             val channel = NotificationChannel(
                 channelId,
                 "Overlay Service",
                 NotificationManager.IMPORTANCE_HIGH
             )
-
 
             val contentPendingIntent: PendingIntent = PendingIntent.getForegroundService(
                 this,
@@ -345,11 +348,9 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
         if (
             intent?.action == Action.SHOW_OVERLAY ||
             intent?.action == Action.SHOW_OVERLAY_SINGLE &&
-            dialogView == null && windowManager == null && lifecycleOwner == null && isRunning
+            dialogView == null && lifecycleOwner == null && isRunning
         ) {
             imageData = Utils.Asset.loadImageData(application.assets)
-
-            windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager?
 
             dialogView = ComposeView(this).apply {
                 setContent {
@@ -413,9 +414,5 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
-    }
-
-    companion object {
-        private const val TAG = "OverlayService"
     }
 }

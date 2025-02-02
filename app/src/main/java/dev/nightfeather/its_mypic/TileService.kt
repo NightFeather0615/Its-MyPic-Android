@@ -3,8 +3,6 @@ package dev.nightfeather.its_mypic
 import android.service.quicksettings.TileService
 
 class TileService: TileService() {
-    private val TAG: String = "ItsMyPicTile"
-
     override fun onTileAdded() {
         super.onTileAdded()
     }
