@@ -30,6 +30,6 @@ class SearchViewModel(
         )
 
     fun onQueryTextChanged(query: String) {
-        _queryText.value = query.lowercase().replace("\n", "").replace("妳", "你")
+        _queryText.value = Utils.StringSearch.formatText(query)
     }
 }

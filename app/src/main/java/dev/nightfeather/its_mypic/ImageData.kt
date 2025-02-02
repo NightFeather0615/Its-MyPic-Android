@@ -27,7 +27,7 @@ class ImageData(
 
     fun isMatchWithQuery(queryString: String): Boolean {
         return Utils.StringSearch.containsApproximateSubstring(
-            text = text.lowercase().replace("\n", "").replace("妳", "你"),
+            text = Utils.StringSearch.formatText(text),
             query = queryString
         )
     }

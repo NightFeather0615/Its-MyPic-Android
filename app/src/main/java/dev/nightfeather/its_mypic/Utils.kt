@@ -108,6 +108,15 @@ object Utils {
     }
 
     object StringSearch {
+        fun formatText(text: String): String {
+            return text
+                .lowercase()
+                .replace("妳", "你")
+                .replace("\n", "")
+                .replace(",", "")
+                .replace(" ", "")
+        }
+
         fun containsApproximateSubstring(text: String, query: String): Boolean {
             if (query.isEmpty()) return true
             if (text.length < query.length) return false

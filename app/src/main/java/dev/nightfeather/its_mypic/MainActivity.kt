@@ -88,7 +88,7 @@ class MainActivity : ComponentActivity() {
             }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                Utils.Permission.CheckNotificationPermission(localContext)
+                Utils.Permission.CheckNotificationPermission()
             }
         }
     }

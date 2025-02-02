@@ -303,7 +303,7 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
 
             val channel = NotificationChannel(
                 channelId,
-                "Overlay Service",
+                "快速存取遮罩服務",
                 NotificationManager.IMPORTANCE_HIGH
             )
 
@@ -327,14 +327,14 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
             NotificationManagerCompat.from(this).createNotificationChannel(channel)
 
             val notification: Notification = NotificationCompat.Builder(this, channelId)
-                .setContentTitle("Running It's MyPic!!!!! Overlay")
-                .setContentText("還在Go...")
+                .setContentTitle("快速存取 MyGo 圖")
+                .setContentText("還在 Go...")
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setContentIntent(contentPendingIntent)
                 .addAction(
                     android.R.drawable.ic_notification_overlay,
-                    "STOP SERVICE",
+                    "終止服務",
                     stopServicePendingIntent
                 )
                 .setAutoCancel(true)
