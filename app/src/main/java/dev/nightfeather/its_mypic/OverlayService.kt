@@ -83,6 +83,7 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
         const val STOP_SERVICE = "stopService"
         const val SHOW_OVERLAY = "showOverlay"
         const val SHOW_OVERLAY_SINGLE = "showOverlaySingle"
+        const val IGNORE = "ignore"
     }
 
     private var isRunning = false
@@ -272,7 +273,9 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
     }
 
     private fun disposeOverlay() {
-        windowManager?.removeViewImmediate(dialogView)
+        if (dialogView != null) {
+            windowManager?.removeViewImmediate(dialogView)
+        }
         lifecycleOwner?.onDestroy()
         lifecycleOwner = null
         dialogView = null
