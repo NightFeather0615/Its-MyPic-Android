@@ -38,7 +38,7 @@ object Utils {
         fun copyImageFromUrl(context: Context, clipboardManager: ClipboardManager, url: String, label: String) {
             val cacheDir = File(context.cacheDir, "clipboard")
             if (!cacheDir.exists()) cacheDir.mkdirs()
-            val imageFile = File(cacheDir, "copied_image.png")
+            val imageFile = File(cacheDir, "copiedImage.jpg")
 
             val request = Request.Builder()
                 .url(url)
@@ -52,7 +52,7 @@ object Utils {
 
             val contentUri = FileProvider.getUriForFile(
                 context,
-                "dev.nightfeather.its_mypic.fileprovider",
+                "dev.nightfeather.its_mypic.fileProvider",
                 imageFile
             )
 

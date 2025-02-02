@@ -327,7 +327,7 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
             NotificationManagerCompat.from(this).createNotificationChannel(channel)
 
             val notification: Notification = NotificationCompat.Builder(this, channelId)
-                .setContentTitle("快速存取 MyGo 圖")
+                .setContentTitle("快速存取 MyGO 圖")
                 .setContentText("還在 Go...")
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)

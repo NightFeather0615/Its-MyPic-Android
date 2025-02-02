@@ -22,7 +22,6 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:windowSoftInputMode="stateVisible"
             android:theme="@style/Theme.ItsMyPicAndroid">
             <intent-filter>
@@ -42,7 +41,7 @@
         <service
             android:name=".TileService"
             android:exported="true"
-            android:label="Test Overlay"
+            android:label="MyGO!!!!!"
             android:icon="@android:drawable/ic_menu_day"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -51,7 +50,7 @@
         </service>
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="dev.nightfeather.its_mypic.fileprovider"
+            android:authorities="dev.nightfeather.its_mypic.fileProvider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
