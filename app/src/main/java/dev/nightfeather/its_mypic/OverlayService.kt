@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.AndroidUiDispatcher
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.compositionContext
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
@@ -31,42 +32,78 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 class OverlayService: Service(), OnTouchListener, OnClickListener {
-    private val channelId = "ItsMyPicOverlay"
+    object Action {
+        val START_SERVICE = "startService"
+        val STOP_SERVICE = "stopService"
+        val SHOW_OVERLAY = "showOverlay"
+        val SHOW_OVERLAY_SINGLE = "showOverlaySingle"
+    }
+
+    private val channelId = "ItsMyPicOverlayService"
 
     private var windowManager: WindowManager? = null
     private var dialogView: ComposeView? = null
     private var lifecycleOwner: ComposeViewLifecycleOwner? = null
 
+    private fun disposeOverlay() {
+        windowManager?.removeViewImmediate(dialogView)
+        lifecycleOwner?.onDestroy()
+        lifecycleOwner = null
+        dialogView = null
+        windowManager = null
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onCreate()
 
-        Log.d("asdasdasdasdasd", intent?.flags.toString())
+        if (
+            intent?.action == Action.STOP_SERVICE
+        ) {
+            disposeOverlay()
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        }
 
         if (
-            intent?.flags == Intent.FLAG_ACTIVITY_NEW_TASK ||
-            intent?.flags == Intent.FLAG_ACTIVITY_SINGLE_TOP
+            intent?.action == Action.START_SERVICE ||
+            intent?.action == Action.SHOW_OVERLAY_SINGLE
         ) {
             val channel = NotificationChannel(
                 channelId,
-                "ItsMyPicOverlay",
+                "Overlay Service",
                 NotificationManager.IMPORTANCE_HIGH
             )
 
-            val notificationIntent = Intent(this, OverlayService::class.java).apply {
-                this.flags = Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT
-            }
-            val pendingIntent: PendingIntent = PendingIntent.getForegroundService(
-                this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE
+
+            val contentPendingIntent: PendingIntent = PendingIntent.getForegroundService(
+                this,
+                0,
+                Intent(this, OverlayService::class.java).apply {
+                    this.action = Action.SHOW_OVERLAY
+                },
+                PendingIntent.FLAG_IMMUTABLE
+            )
+            val stopServicePendingIntent: PendingIntent = PendingIntent.getForegroundService(
+                this,
+                0,
+                Intent(this, OverlayService::class.java).apply {
+                    this.action = Action.STOP_SERVICE
+                },
+                PendingIntent.FLAG_IMMUTABLE
             )
 
-            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(channel)
+            NotificationManagerCompat.from(this).createNotificationChannel(channel)
 
             val notification: Notification = NotificationCompat.Builder(this, channelId)
                 .setContentTitle("Running It's MyPic!!!!! Overlay")
                 .setContentText("還在Go...")
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setContentIntent(pendingIntent)
+                .setContentIntent(contentPendingIntent)
+                .addAction(
+                    android.R.drawable.ic_notification_overlay,
+                    "STOP SERVICE",
+                    stopServicePendingIntent
+                )
                 .setAutoCancel(true)
                 .build()
 
@@ -74,8 +111,8 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
         }
 
         if (
-            intent?.flags == Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT ||
-            intent?.flags == Intent.FLAG_ACTIVITY_SINGLE_TOP &&
+            intent?.action == Action.SHOW_OVERLAY ||
+            intent?.action == Action.SHOW_OVERLAY_SINGLE &&
             dialogView == null && windowManager == null && lifecycleOwner == null
         ) {
             windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager?
@@ -128,11 +165,7 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
     fun ImageBrowseDialog(isSingle: Boolean) {
         ElevatedButton (
             onClick = {
-                windowManager?.removeViewImmediate(dialogView)
-                lifecycleOwner?.onDestroy()
-                lifecycleOwner = null
-                dialogView = null
-                windowManager = null
+                disposeOverlay()
                 if (isSingle) stopForeground(STOP_FOREGROUND_REMOVE)
             }
         ) {
@@ -144,13 +177,10 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
 
     override fun onTouch(v: View, event: MotionEvent): Boolean {
         v.performClick()
-        Log.d(TAG, " ++++ On touch")
         return false
     }
 
-    override fun onClick(v: View?) {
-        Log.d(TAG, " ++++ On click")
-    }
+    override fun onClick(v: View?) {}
 
     override fun onDestroy() {
         super.onDestroy()

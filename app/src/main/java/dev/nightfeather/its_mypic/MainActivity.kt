@@ -24,7 +24,7 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.padding(innerPadding),
                         onClick = {
                             if (Utils.checkOverlayPermission(this)) {
-                                Utils.startOverlayService(this);
+                                Utils.startOverlayService(this)
                             }
                         }
                     ) {
@@ -32,6 +32,8 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+            Utils.checkOverlayPermission(this)
+            Utils.checkNotificationPermission(this)
         }
     }
 }
