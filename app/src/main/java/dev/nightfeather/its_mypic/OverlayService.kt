@@ -329,21 +329,23 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
 
             NotificationManagerCompat.from(this).createNotificationChannel(channel)
 
-            val notification: Notification = NotificationCompat.Builder(this, channelId)
+            val notification = NotificationCompat.Builder(this, channelId)
                 .setContentTitle("快速存取 MyGO 圖")
                 .setContentText("還在 Go...")
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setContentIntent(contentPendingIntent)
                 .addAction(
                     android.R.drawable.ic_notification_overlay,
                     "終止服務",
                     stopServicePendingIntent
                 )
                 .setAutoCancel(true)
-                .build()
 
-            startForeground(114514, notification)
+            if (intent.action != Action.SHOW_OVERLAY_SINGLE) {
+                notification.setContentIntent(contentPendingIntent)
+            }
+
+            startForeground(114514, notification.build())
 
             isRunning = true
         }
