@@ -30,7 +30,6 @@ class ComposeViewLifecycleOwner:
     override val viewModelStore: ViewModelStore
         get() = store
 
-
     fun onCreate() {
         savedStateRegistryController.performRestore(null)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
