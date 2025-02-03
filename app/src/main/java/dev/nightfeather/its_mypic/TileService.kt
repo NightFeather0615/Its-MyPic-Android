@@ -22,7 +22,7 @@ class TileService: TileService() {
             showDialog(dialog)
             dialog.dismiss()
 
-            Utils.Overlay.startService(this, true);
+            Utils.Overlay.startService(this, true)
         }
     }
 

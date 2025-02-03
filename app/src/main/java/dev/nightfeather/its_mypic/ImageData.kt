@@ -3,6 +3,7 @@ package dev.nightfeather.its_mypic
 import androidx.compose.runtime.Stable
 import com.google.gson.annotations.SerializedName
 
+const val URL_SCHEME = "https"
 const val URL_BASE = "mygodata.0m0.uk"
 const val URL_PATH = "images"
 const val URL_IMAGE_FORMAT = "jpg"
@@ -20,9 +21,8 @@ class ImageData(
     @SerializedName("segment_id")
     val segmentId: Int
 ) {
-
     fun toUrl(): String {
-        return "https://$URL_BASE/$URL_PATH/${episode}_${frameStart}.$URL_IMAGE_FORMAT"
+        return "$URL_SCHEME://$URL_BASE/$URL_PATH/${episode}_${frameStart}.$URL_IMAGE_FORMAT"
     }
 
     fun isMatchWithQuery(queryString: String): Boolean {

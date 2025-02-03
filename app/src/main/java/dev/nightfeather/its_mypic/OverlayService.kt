@@ -14,12 +14,15 @@ import android.view.View
 import android.view.View.OnClickListener
 import android.view.View.OnTouchListener
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.fadeIn
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -57,6 +60,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -74,7 +78,6 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
         const val STOP_SERVICE = "stopService"
         const val SHOW_OVERLAY = "showOverlay"
         const val SHOW_OVERLAY_SINGLE = "showOverlaySingle"
-        const val IGNORE = "ignore"
     }
 
     private var isRunning = false
@@ -83,11 +86,11 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
 
     private var windowManager: WindowManager? = null
     private var dialogView: ComposeView? = null
-    private var lifecycleOwner: ComposeViewLifecycleOwner? = null
+    private var composeViewOwner: ComposeViewOwner? = null
     private var imageData: List<ImageData> = listOf()
 
     @Composable
-    @OptIn(ExperimentalMaterial3Api::class)
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
     private fun ImageBrowseDialog(isSingle: Boolean) {
         val localContext = LocalContext.current
         val localClipboardManager = LocalClipboardManager.current
@@ -110,6 +113,9 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
         val searchQueryText by searchViewModel.queryText.collectAsState()
         val imageSearchResult by searchViewModel.searchResult.collectAsState()
 
+        val downloadToast = Toast.makeText(localContext, "下載圖片...", Toast.LENGTH_SHORT)
+        val saveToast = Toast.makeText(localContext, "保存成功", Toast.LENGTH_SHORT)
+        val copyToast = Toast.makeText(localContext, "複製成功", Toast.LENGTH_SHORT)
 
         AnimatedVisibility(
             visibleState = fadeInAnimateState,
@@ -161,23 +167,48 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
                                         shape = RoundedCornerShape(16.dp)
                                     )
                                     .background(Color(0xFF565e71))
-                                    .clickable {
-                                        coroutineScope.launch {
-                                            withContext(Dispatchers.IO) {
-                                                Utils.Clipboard.copyImageFromUrl(
-                                                    context = localContext,
-                                                    clipboardManager = localClipboardManager.nativeClipboard,
-                                                    url = searchData.toUrl(),
-                                                    label = searchData.text
-                                                )
+                                    .combinedClickable(
+                                        role = Role.Button,
+                                        onClickLabel = "Copy Image to Clipboard",
+                                        onClick = {
+                                            downloadToast.show()
+                                            coroutineScope.launch {
+                                                withContext(Dispatchers.IO) {
+                                                    Utils.Clipboard.copyImageFromUrl(
+                                                        context = localContext,
+                                                        clipboardManager = localClipboardManager.nativeClipboard,
+                                                        imageData = searchData
+                                                    )
+                                                }
+                                                downloadToast.cancel()
+                                                copyToast.show()
+                                                if (isSingle) {
+                                                    stopService()
+                                                } else {
+                                                    disposeOverlay()
+                                                }
                                             }
-                                            if (isSingle) {
-                                                stopService()
-                                            } else {
-                                                disposeOverlay()
+                                        },
+                                        onLongClickLabel = "Save Image",
+                                        onLongClick = {
+                                            downloadToast.show()
+                                            coroutineScope.launch {
+                                                withContext(Dispatchers.IO) {
+                                                    Utils.File.downloadImageFromUrl(
+                                                        context = localContext,
+                                                        imageData = searchData
+                                                    )
+                                                }
+                                                downloadToast.cancel()
+                                                saveToast.show()
+                                                if (isSingle) {
+                                                    stopService()
+                                                } else {
+                                                    disposeOverlay()
+                                                }
                                             }
                                         }
-                                    }
+                                    )
                             ) {
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally
@@ -267,8 +298,8 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
         if (dialogView != null) {
             windowManager?.removeViewImmediate(dialogView)
         }
-        lifecycleOwner?.onDestroy()
-        lifecycleOwner = null
+        composeViewOwner?.onDestroy()
+        composeViewOwner = null
         dialogView = null
     }
 
@@ -344,7 +375,7 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
         if (
             intent?.action == Action.SHOW_OVERLAY ||
             intent?.action == Action.SHOW_OVERLAY_SINGLE &&
-            dialogView == null && lifecycleOwner == null && isRunning
+            dialogView == null && composeViewOwner == null && isRunning
         ) {
             imageData = Utils.Asset.loadImageData(application.assets)
 
@@ -356,7 +387,7 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
                 }
             }
 
-            lifecycleOwner = ComposeViewLifecycleOwner().also {
+            composeViewOwner = ComposeViewOwner().also {
                 it.onCreate()
                 it.attachToDecorView(dialogView)
             }

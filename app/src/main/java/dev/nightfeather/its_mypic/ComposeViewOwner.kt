@@ -1,6 +1,5 @@
 package dev.nightfeather.its_mypic
 
-import android.util.Log
 import android.view.View
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.OnBackPressedDispatcherOwner
@@ -22,12 +21,13 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-class ComposeViewLifecycleOwner:
-    LifecycleOwner, ViewModelStoreOwner, SavedStateRegistryOwner, OnBackPressedDispatcherOwner {
-
-    private val lifecycleRegistry: LifecycleRegistry = LifecycleRegistry(this)
-    private val savedStateRegistryController = SavedStateRegistryController.create(this)
+class ComposeViewOwner:
+    LifecycleOwner, ViewModelStoreOwner, SavedStateRegistryOwner, OnBackPressedDispatcherOwner
+{
     override val onBackPressedDispatcher = OnBackPressedDispatcher()
+
+    private val lifecycleRegistry = LifecycleRegistry(this)
+    private val savedStateRegistryController = SavedStateRegistryController.create(this)
     private val store = ViewModelStore()
 
     override val lifecycle: Lifecycle
