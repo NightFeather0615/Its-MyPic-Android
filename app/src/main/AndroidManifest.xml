@@ -42,7 +42,7 @@
             android:name=".TileService"
             android:exported="true"
             android:label="MyGO!!!!!"
-            android:icon="@android:drawable/ic_menu_day"
+            android:icon="@drawable/ic_launcher_foreground"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
