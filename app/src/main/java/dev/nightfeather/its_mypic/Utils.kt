@@ -170,7 +170,7 @@ object Utils {
 
         fun downloadImageFromUrl(context: Context, imageData: ImageData) {
             val picturesDir = Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_PICTURES
+                Environment.DIRECTORY_DOWNLOADS
             )
 
             val downloadDir = File(picturesDir, IMAGE_FOLDER)
