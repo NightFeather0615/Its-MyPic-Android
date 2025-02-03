@@ -1,6 +1,5 @@
 package dev.nightfeather.its_mypic
 
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -15,7 +14,6 @@ import android.view.View
 import android.view.View.OnClickListener
 import android.view.View.OnTouchListener
 import android.view.WindowManager
-import androidx.activity.setViewTreeOnBackPressedDispatcherOwner
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.fadeIn
@@ -45,7 +43,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -56,23 +53,17 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.AndroidUiDispatcher
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.compositionContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.lifecycle.setViewTreeLifecycleOwner
-import androidx.lifecycle.setViewTreeViewModelStoreOwner
-import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import coil3.compose.AsyncImage
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -335,7 +326,7 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .addAction(
-                    android.R.drawable.ic_notification_overlay,
+                    android.R.drawable.ic_media_pause,
                     "終止服務",
                     stopServicePendingIntent
                 )
@@ -368,20 +359,6 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
             lifecycleOwner = ComposeViewLifecycleOwner().also {
                 it.onCreate()
                 it.attachToDecorView(dialogView)
-            }
-
-            dialogView!!.setViewTreeLifecycleOwner(lifecycleOwner)
-            dialogView!!.setViewTreeSavedStateRegistryOwner(lifecycleOwner)
-            dialogView!!.setViewTreeViewModelStoreOwner(lifecycleOwner)
-            dialogView!!.setViewTreeOnBackPressedDispatcherOwner(lifecycleOwner!!)
-
-            val coroutineContext = AndroidUiDispatcher.CurrentThread
-            val runRecomposeScope = CoroutineScope(coroutineContext)
-            val recomposer = Recomposer(coroutineContext)
-
-            dialogView!!.compositionContext = recomposer
-            runRecomposeScope.launch {
-                recomposer.runRecomposeAndApplyChanges()
             }
 
             val params = WindowManager.LayoutParams(

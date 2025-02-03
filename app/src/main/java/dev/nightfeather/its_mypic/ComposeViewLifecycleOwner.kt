@@ -1,8 +1,13 @@
 package dev.nightfeather.its_mypic
 
+import android.util.Log
 import android.view.View
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.OnBackPressedDispatcherOwner
+import androidx.activity.setViewTreeOnBackPressedDispatcherOwner
+import androidx.compose.runtime.Recomposer
+import androidx.compose.ui.platform.AndroidUiDispatcher
+import androidx.compose.ui.platform.compositionContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
@@ -14,6 +19,8 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 class ComposeViewLifecycleOwner:
     LifecycleOwner, ViewModelStoreOwner, SavedStateRegistryOwner, OnBackPressedDispatcherOwner {
@@ -57,10 +64,22 @@ class ComposeViewLifecycleOwner:
     }
 
     fun attachToDecorView(decorView: View?) {
-        decorView?.let {
+        if (decorView == null) return
+
+        decorView.let {
             it.setViewTreeViewModelStoreOwner(this)
             it.setViewTreeLifecycleOwner(this)
             it.setViewTreeSavedStateRegistryOwner(this)
-        } ?: return
+            it.setViewTreeOnBackPressedDispatcherOwner(this)
+        }
+
+        val coroutineContext = AndroidUiDispatcher.CurrentThread
+        val runRecomposeScope = CoroutineScope(coroutineContext)
+        val recomposer = Recomposer(coroutineContext)
+
+        decorView.compositionContext = recomposer
+        runRecomposeScope.launch {
+            recomposer.runRecomposeAndApplyChanges()
+        }
     }
 }
