@@ -55,20 +55,26 @@ jobs:
       - name: Build app bundle release (AAB) - ${{ env.main_project_module }} module
         run: ./gradlew ${{ env.main_project_module }}:bundleRelease
 
+      - name: rename artifact
+        run: |
+            mv ${{ env.main_project_module }}/build/outputs/apk/debug/*.apk ${{ env.repository_name }}-${{ env.hash }}-debug.apk
+            mv ${{ env.main_project_module }}/build/outputs/apk/release/*.apk ${{ env.repository_name }}-${{ env.hash }}-release.apk
+            mv ${{ env.main_project_module }}/build/outputs/bundle/release/*.aab ${{ env.repository_name }}-${{ env.hash }}.aab
+
       - name: Upload APK Release - ${{ env.repository_name }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.repository_name }}-${{ env.hash }}-release
-          path: ${{ env.main_project_module }}/build/outputs/apk/release/
+          path: ${{ env.repository_name }}-${{ env.hash }}-release.apk
 
       - name: Upload APK Debug - ${{ env.repository_name }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.repository_name }}-${{ env.hash }}-debug
-          path: ${{ env.main_project_module }}/build/outputs/apk/debug/
+          path: ${{ env.repository_name }}-${{ env.hash }}-debug.apk
 
       - name: Upload AAB (App Bundle) Release - ${{ env.repository_name }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.repository_name }}-${{ env.hash }}-AAB
-          path: ${{ env.main_project_module }}/build/outputs/bundle/release/
+          path: ${{ env.repository_name }}-${{ env.hash }}.aab
