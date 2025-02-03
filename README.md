@@ -2,7 +2,7 @@
 快速搜尋 MyGo!!!!! & Ave Mujica 圖片
 
 ## Demo
-https://github.com/user-attachments/assets/039c424a-abfe-4cc4-b3db-d90e0e75b362
+https://github.com/user-attachments/assets/156e8a45-c4a4-4afa-bdf2-6c5cbfa521b9
 
 ## Download
 * [GitHub Release](https://github.com/NightFeather0615/Its-MyPic-Android/releases/latest)
