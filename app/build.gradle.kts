@@ -39,7 +39,7 @@ android {
     }
 
     signingConfigs {
-        create("githubRelease") {
+        create("release") {
             keyAlias = keystoreProperties["keyAlias"] as String
             keyPassword = keystoreProperties["keyPassword"] as String
             storeFile = file(keystoreProperties["storeFile"] as String)
@@ -54,7 +54,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.findByName("githubRelease")
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 }
