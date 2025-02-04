@@ -24,37 +24,37 @@ jobs:
         if: ${{ github.ref_type == 'tag' }}
         run: |
             if [ ! -z "${{ secrets.KEYSTORE }}" ]; then
-              cat << EOM >> ./app/src/build.gradle.kts
-              val keystorePropertiesFile = rootProject.file("keystore.properties")
-              val keystoreProperties = Properties()
-              keystoreProperties.load(FileInputStream(keystorePropertiesFile))
-              
-              android {
-                signingConfigs {
-                  create("githubRelease") {
-                    keyAlias = keystoreProperties["keyAlias"] as String
-                    keyPassword = keystoreProperties["keyPassword"] as String
-                    storeFile = file(keystoreProperties["storeFile"] as String)
-                    storePassword = keystoreProperties["storePassword"] as String
-                  }
-                }
-  
-                buildTypes {
-                  release {
-                    signingConfig = signingConfigs.findByName("githubRelease")
-                  }
+            cat << EOM >> ./app/src/build.gradle.kts
+            val keystorePropertiesFile = rootProject.file("keystore.properties")
+            val keystoreProperties = Properties()
+            keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+            
+            android {
+              signingConfigs {
+                create("githubRelease") {
+                  keyAlias = keystoreProperties["keyAlias"] as String
+                  keyPassword = keystoreProperties["keyPassword"] as String
+                  storeFile = file(keystoreProperties["storeFile"] as String)
+                  storePassword = keystoreProperties["storePassword"] as String
                 }
               }
-              EOM
+  
+              buildTypes {
+                release {
+                  signingConfig = signingConfigs.findByName("githubRelease")
+                }
+              }
+            }
+            EOM
           
-              cat << EOM >> keystore.properties
-              storePassword="${{ secrets.KEYSTORE_PASSWORD }}"
-              keyAlias="${{ secrets.KEY_ALIAS }}"
-              keyPassword="${{ secrets.KEY_PASSWORD }}"
-              storeFile="../appKeystore.jks"
-              EOM
+            cat << EOM >> keystore.properties
+            storePassword="${{ secrets.KEYSTORE_PASSWORD }}"
+            keyAlias="${{ secrets.KEY_ALIAS }}"
+            keyPassword="${{ secrets.KEY_PASSWORD }}"
+            storeFile="../appKeystore.jks"
+            EOM
           
-              echo ${{ secrets.KEYSTORE }} | base64 -d > appKeystore.jks
+            echo ${{ secrets.KEYSTORE }} | base64 -d > appKeystore.jks
             fi
 
       - name: Setup JDK
