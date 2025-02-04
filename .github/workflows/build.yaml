@@ -21,7 +21,7 @@ jobs:
         run: echo "hash=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
       - name: Write Signing Config
-        if: ${{ github.ref_type == "tag" }}
+        if: ${{ github.ref_type == 'tag' }}
         run: |
             if [ ! -z "${{ secrets.KEYSTORE }}" ]; then
               cat << EOM >> ./app/src/build.gradle.kts
@@ -105,7 +105,7 @@ jobs:
 
       - name: Release
         uses: softprops/action-gh-release@v1
-        if: ${{ github.ref_type == "tag" }}
+        if: ${{ github.ref_type == 'tag' }}
         with:
           files: |
             ${{ env.repository_name }}-${{ env.hash }}-release.apk
