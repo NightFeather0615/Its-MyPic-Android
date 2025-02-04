@@ -107,6 +107,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: github.ref_type == "tag"
         with:
-          files:
-            - ${{ env.repository_name }}-${{ env.hash }}-release.apk
-            - ${{ env.repository_name }}-${{ env.hash }}.aab
+          files: |
+            ${{ env.repository_name }}-${{ env.hash }}-release.apk
+            ${{ env.repository_name }}-${{ env.hash }}.aab
