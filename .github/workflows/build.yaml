@@ -15,7 +15,7 @@ jobs:
           submodules: true
 
       - name: Set Repository Name as Env Variable
-        run: echo "repository_name=$(echo "${{ github.repository }}" | awk -F "/" "{print $2}")" >> $GITHUB_ENV
+        run: echo "repository_name=$(echo '${{ github.repository }}' | awk -F '/' '{print $2}')" >> $GITHUB_ENV
 
       - name: Set Hash as Env Variable
         run: echo "hash=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
