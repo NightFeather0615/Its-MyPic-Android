@@ -24,8 +24,11 @@ jobs:
         if: ${{ github.ref_type == 'tag' }}
         run: |
             if [ ! -z "${{ secrets.KEYSTORE }}" ]; then
-            cat << EOM >> ./app/src/build.gradle.kts
-            val keystorePropertiesFile = rootProject.file("keystore.properties")
+            cat << EOM >> app/build.gradle.kts
+            import java.util.Properties
+            import java.io.FileInputStream
+          
+            val keystorePropertiesFile = rootProject.file("githubKeystore.properties")
             val keystoreProperties = Properties()
             keystoreProperties.load(FileInputStream(keystorePropertiesFile))
             
@@ -47,14 +50,14 @@ jobs:
             }
             EOM
           
-            cat << EOM >> keystore.properties
-            storePassword="${{ secrets.KEYSTORE_PASSWORD }}"
-            keyAlias="${{ secrets.KEY_ALIAS }}"
-            keyPassword="${{ secrets.KEY_PASSWORD }}"
-            storeFile="../appKeystore.jks"
+            cat << EOM >> githubKeystore.properties
+            storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+            keyAlias=${{ secrets.KEY_ALIAS }}
+            keyPassword=${{ secrets.KEY_PASSWORD }}
+            storeFile=../githubKeystore.jks
             EOM
           
-            echo ${{ secrets.KEYSTORE }} | base64 -d > appKeystore.jks
+            echo ${{ secrets.KEYSTORE }} | base64 -d > githubKeystore.jks
             fi
 
       - name: Setup JDK
