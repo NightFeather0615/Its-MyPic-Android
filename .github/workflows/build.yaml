@@ -14,48 +14,72 @@ jobs:
         with:
           submodules: true
 
-      - name: Set repository name as env variable
-        run: echo "repository_name=$(echo '${{ github.repository }}' | awk -F '/' '{print $2}')" >> $GITHUB_ENV
+      - name: Set Repository Name as Env Variable
+        run: echo "repository_name=$(echo "${{ github.repository }}" | awk -F "/" "{print $2}")" >> $GITHUB_ENV
 
-      - name: Set hash as env variable
+      - name: Set Hash as Env Variable
         run: echo "hash=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
-      - name: Write key
-        if: ${{ ( github.ref == 'refs/heads/main' ) }}
+      - name: Write Signing Config
+        if: ${{ github.ref_type == "tag" }}
         run: |
             if [ ! -z "${{ secrets.KEYSTORE }}" ]; then
-              {
-                echo storePassword='${{ secrets.KEYSTORE_PASSWORD }}'
-                echo keyAlias='${{ secrets.KEY_ALIAS }}'
-                echo keyPassword='${{ secrets.KEY_PASSWORD }}'
-                echo storeFile='../appKeystore.jks'
-              } >> keystore.properties
+              cat << EOM >> ./app/src/build.gradle.kts
+              val keystorePropertiesFile = rootProject.file("keystore.properties")
+              val keystoreProperties = Properties()
+              keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+              
+              android {
+                signingConfigs {
+                  create("githubRelease") {
+                    keyAlias = keystoreProperties["keyAlias"] as String
+                    keyPassword = keystoreProperties["keyPassword"] as String
+                    storeFile = file(keystoreProperties["storeFile"] as String)
+                    storePassword = keystoreProperties["storePassword"] as String
+                  }
+                }
+  
+                buildTypes {
+                  release {
+                    signingConfig = signingConfigs.findByName("githubRelease")
+                  }
+                }
+              }
+              EOM
+          
+              cat << EOM >> keystore.properties
+              storePassword="${{ secrets.KEYSTORE_PASSWORD }}"
+              keyAlias="${{ secrets.KEY_ALIAS }}"
+              keyPassword="${{ secrets.KEY_PASSWORD }}"
+              storeFile="../appKeystore.jks"
+              EOM
+          
               echo ${{ secrets.KEYSTORE }} | base64 -d > appKeystore.jks
             fi
 
-      - name: Set Up JDK
+      - name: Setup JDK
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
-          java-version: '17'
-          cache: 'gradle'
+          distribution: "zulu"
+          java-version: "17"
+          cache: "gradle"
 
-      - name: Change wrapper permissions
+      - name: Change Wrapper Permissions
         run: chmod +x ./gradlew
 
-      - name: Build gradle project
+      - name: Build Gradle Project
         run: ./gradlew build
 
-      - name: Build apk release project (APK) - ${{ env.main_project_module }} module
+      - name: Build APK Release Project - ${{ env.main_project_module }} module
         run: ./gradlew assemble
 
-      - name: Build apk debug project (APK) - ${{ env.main_project_module }} module
+      - name: Build APK Debug Project - ${{ env.main_project_module }} module
         run: ./gradlew assembleDebug
 
-      - name: Build app bundle release (AAB) - ${{ env.main_project_module }} module
+      - name: Build App Bundle Release - ${{ env.main_project_module }} module
         run: ./gradlew ${{ env.main_project_module }}:bundleRelease
 
-      - name: rename artifact
+      - name: Rename Artifact
         run: |
             mv ${{ env.main_project_module }}/build/outputs/apk/debug/*.apk ${{ env.repository_name }}-${{ env.hash }}-debug.apk
             mv ${{ env.main_project_module }}/build/outputs/apk/release/*.apk ${{ env.repository_name }}-${{ env.hash }}-release.apk
@@ -78,3 +102,11 @@ jobs:
         with:
           name: ${{ env.repository_name }}-${{ env.hash }}-AAB
           path: ${{ env.repository_name }}-${{ env.hash }}.aab
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: github.ref_type == "tag"
+        with:
+          files:
+            - ${{ env.repository_name }}-${{ env.hash }}-release.apk
+            - ${{ env.repository_name }}-${{ env.hash }}.aab
