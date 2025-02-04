@@ -1,5 +1,5 @@
 # It's MyPic!!!!! for Android
-快速搜尋 MyGo!!!!! & Ave Mujica 圖片
+媽媽再也不怕我找不到 MyGO 圖了
 
 ## Demo
 https://github.com/user-attachments/assets/156e8a45-c4a4-4afa-bdf2-6c5cbfa521b9

@@ -80,7 +80,8 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
         const val SHOW_OVERLAY_SINGLE = "showOverlaySingle"
     }
 
-    private var isRunning = false
+    private var isServiceRunning = false
+    private var isOverlayShown = false
 
     private val channelId = "ItsMyPicOverlayService"
 
@@ -140,7 +141,7 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
                             if (isSingle) {
                                 stopService()
                             } else {
-                                disposeOverlay()
+                                removeOverlay()
                             }
                         }
                 )
@@ -185,7 +186,7 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
                                                 if (isSingle) {
                                                     stopService()
                                                 } else {
-                                                    disposeOverlay()
+                                                    removeOverlay()
                                                 }
                                             }
                                         },
@@ -204,7 +205,7 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
                                                 if (isSingle) {
                                                     stopService()
                                                 } else {
-                                                    disposeOverlay()
+                                                    removeOverlay()
                                                 }
                                             }
                                         }
@@ -294,117 +295,132 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
         }
     }
 
-    private fun disposeOverlay() {
-        if (dialogView != null) {
+    private fun attachOverlay() {
+        val params = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            PixelFormat.TRANSLUCENT
+        )
+
+        params.gravity = Gravity.START or Gravity.TOP
+        params.x = 0
+        params.y = 0
+
+        windowManager!!.addView(dialogView, params)
+
+        isOverlayShown = true
+    }
+
+    private fun removeOverlay() {
+        if (dialogView != null && isOverlayShown) {
             windowManager?.removeViewImmediate(dialogView)
         }
+        isOverlayShown = false
+    }
+
+    private fun disposeOverlayView() {
         composeViewOwner?.onDestroy()
         composeViewOwner = null
         dialogView = null
     }
 
+    private fun initService(intent: Intent) {
+        windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager?
+
+        imageData = Utils.Asset.loadImageData(application.assets)
+
+        dialogView = ComposeView(this).apply {
+            setContent {
+                ImageBrowseDialog(
+                    isSingle = intent.action == Action.SHOW_OVERLAY_SINGLE
+                )
+            }
+        }
+
+        composeViewOwner = ComposeViewOwner().also {
+            it.onCreate()
+            it.attachToDecorView(dialogView)
+        }
+
+        val channel = NotificationChannel(
+            channelId,
+            "快速存取遮罩服務",
+            NotificationManager.IMPORTANCE_HIGH
+        )
+
+        val contentPendingIntent: PendingIntent = PendingIntent.getForegroundService(
+            this,
+            0,
+            Intent(this, OverlayService::class.java).apply {
+                this.action = Action.SHOW_OVERLAY
+            },
+            PendingIntent.FLAG_IMMUTABLE
+        )
+        val stopServicePendingIntent: PendingIntent = PendingIntent.getForegroundService(
+            this,
+            0,
+            Intent(this, OverlayService::class.java).apply {
+                this.action = Action.STOP_SERVICE
+            },
+            PendingIntent.FLAG_IMMUTABLE
+        )
+
+        NotificationManagerCompat.from(this).createNotificationChannel(channel)
+
+        val notification = NotificationCompat.Builder(this, channelId)
+            .setContentTitle("快速存取 MyGO 圖")
+            .setContentText("還在 Go...")
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .addAction(
+                android.R.drawable.ic_media_pause,
+                "終止服務",
+                stopServicePendingIntent
+            )
+            .setAutoCancel(true)
+
+        if (intent.action != Action.SHOW_OVERLAY_SINGLE) {
+            notification.setContentIntent(contentPendingIntent)
+        }
+
+        startForeground(114514, notification.build())
+
+        isServiceRunning = true
+    }
+
     private fun stopService() {
-        disposeOverlay()
+        removeOverlay()
+        disposeOverlayView()
         stopForeground(STOP_FOREGROUND_REMOVE)
         windowManager = null
-        isRunning = false
+        isServiceRunning = false
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onCreate()
 
+        if (intent == null) throw Exception("Can't start OverlayService with null intent.")
+
         if (
-            intent?.action == Action.STOP_SERVICE
+            intent.action == Action.STOP_SERVICE
         ) {
             stopService()
         }
 
         if (
-            intent?.action == Action.START_SERVICE ||
-            intent?.action == Action.SHOW_OVERLAY_SINGLE &&
-            !isRunning
+            (intent.action == Action.START_SERVICE || intent.action == Action.SHOW_OVERLAY_SINGLE) &&
+            !isServiceRunning
         ) {
-            windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager?
-
-            val channel = NotificationChannel(
-                channelId,
-                "快速存取遮罩服務",
-                NotificationManager.IMPORTANCE_HIGH
-            )
-
-            val contentPendingIntent: PendingIntent = PendingIntent.getForegroundService(
-                this,
-                0,
-                Intent(this, OverlayService::class.java).apply {
-                    this.action = Action.SHOW_OVERLAY
-                },
-                PendingIntent.FLAG_IMMUTABLE
-            )
-            val stopServicePendingIntent: PendingIntent = PendingIntent.getForegroundService(
-                this,
-                0,
-                Intent(this, OverlayService::class.java).apply {
-                    this.action = Action.STOP_SERVICE
-                },
-                PendingIntent.FLAG_IMMUTABLE
-            )
-
-            NotificationManagerCompat.from(this).createNotificationChannel(channel)
-
-            val notification = NotificationCompat.Builder(this, channelId)
-                .setContentTitle("快速存取 MyGO 圖")
-                .setContentText("還在 Go...")
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .addAction(
-                    android.R.drawable.ic_media_pause,
-                    "終止服務",
-                    stopServicePendingIntent
-                )
-                .setAutoCancel(true)
-
-            if (intent.action != Action.SHOW_OVERLAY_SINGLE) {
-                notification.setContentIntent(contentPendingIntent)
-            }
-
-            startForeground(114514, notification.build())
-
-            isRunning = true
+            initService(intent)
         }
 
         if (
-            intent?.action == Action.SHOW_OVERLAY ||
-            intent?.action == Action.SHOW_OVERLAY_SINGLE &&
-            dialogView == null && composeViewOwner == null && isRunning
+            (intent.action == Action.SHOW_OVERLAY || intent.action == Action.SHOW_OVERLAY_SINGLE) &&
+            !isOverlayShown && isServiceRunning
         ) {
-            imageData = Utils.Asset.loadImageData(application.assets)
-
-            dialogView = ComposeView(this).apply {
-                setContent {
-                    ImageBrowseDialog(
-                        isSingle = intent.action == Action.SHOW_OVERLAY_SINGLE
-                    )
-                }
-            }
-
-            composeViewOwner = ComposeViewOwner().also {
-                it.onCreate()
-                it.attachToDecorView(dialogView)
-            }
-
-            val params = WindowManager.LayoutParams(
-                WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-                PixelFormat.TRANSLUCENT
-            )
-
-            params.gravity = Gravity.START or Gravity.TOP
-            params.x = 0
-            params.y = 0
-
-            windowManager!!.addView(dialogView, params)
+            attachOverlay()
         }
 
         return START_NOT_STICKY
@@ -419,10 +435,7 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
 
     override fun onDestroy() {
         super.onDestroy()
-        if (dialogView != null) {
-            windowManager!!.removeView(dialogView)
-            dialogView = null
-        }
+        stopService()
     }
 
     override fun onBind(intent: Intent?): IBinder? {
