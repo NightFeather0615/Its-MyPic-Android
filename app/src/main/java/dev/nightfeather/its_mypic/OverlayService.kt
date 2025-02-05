@@ -215,7 +215,7 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     AsyncImage(
-                                        model = searchData.toUrl(),
+                                        model = searchData.sourceUrl,
                                         contentDescription = searchData.text,
                                         modifier = Modifier
                                             .width(280.dp)

@@ -44,13 +44,6 @@ import coil3.compose.AsyncImage
 import dev.nightfeather.its_mypic.ui.theme.ItsMyPicAndroidTheme
 
 class MainActivity : ComponentActivity() {
-    private val startImageData = ImageData(
-        text = "來,開始溝通吧",
-        episode = "4",
-        frameStart = 11368,
-        frameEnd = 11408,
-        segmentId = 1198
-    )
 
     @Composable
     fun InfoDialog(state: MutableState<Boolean>, title: String, text: String) {
@@ -202,8 +195,8 @@ class MainActivity : ComponentActivity() {
                             .fillMaxSize()
                     ) {
                         AsyncImage(
-                            model = startImageData.toUrl(),
-                            contentDescription = startImageData.text,
+                            model = "https://mygodata.0m0.uk/images/4_11368.jpg",
+                            contentDescription = "來,開始溝通吧",
                             modifier = Modifier
                                 .padding(
                                     horizontal = (screenWidth * 0.06F).dp

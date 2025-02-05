@@ -1,4 +1,4 @@
-name: Build APK
+name: Build App
 
 env:
   main_project_module: app
@@ -46,14 +46,14 @@ jobs:
               }
             }
             EOM
-          
+            
             cat << EOM >> githubKeystore.properties
             storePassword=${{ secrets.KEYSTORE_PASSWORD }}
             keyAlias=${{ secrets.KEY_ALIAS }}
             keyPassword=${{ secrets.KEY_PASSWORD }}
             storeFile=../githubKeystore.jks
             EOM
-          
+            
             echo ${{ secrets.KEYSTORE }} | base64 -d > githubKeystore.jks
             fi
 
@@ -70,43 +70,47 @@ jobs:
       - name: Build Gradle Project
         run: ./gradlew build
 
-      - name: Build APK Release Project - ${{ env.main_project_module }} module
+      - name: Build APK Release - ${{ env.main_project_module }} module
+        if: ${{ github.ref_type == 'tag' }}
         run: ./gradlew assemble
 
-      - name: Build APK Debug Project - ${{ env.main_project_module }} module
-        run: ./gradlew assembleDebug
-
-      - name: Build App Bundle Release - ${{ env.main_project_module }} module
+      - name: Build AAB Release - ${{ env.main_project_module }} module
+        if: ${{ github.ref_type == 'tag' }}
         run: ./gradlew ${{ env.main_project_module }}:bundleRelease
 
-      - name: Rename Artifact
+      - name: Build APK Debug - ${{ env.main_project_module }} module
+        run: ./gradlew assembleDebug
+
+      - name: Build AAB Debug - ${{ env.main_project_module }} module
+        run: ./gradlew ${{ env.main_project_module }}:bundle
+
+      - name: Rename Release Output
+        if: ${{ github.ref_type == 'tag' }}
+        run: |
+          mv ${{ env.main_project_module }}/build/outputs/apk/release/*.apk ${{ env.repository_name }}-${{ env.hash }}-release.apk
+          mv ${{ env.main_project_module }}/build/outputs/bundle/release/*.aab ${{ env.repository_name }}-${{ env.hash }}-release.aab
+
+      - name: Rename Debug Output
         run: |
             mv ${{ env.main_project_module }}/build/outputs/apk/debug/*.apk ${{ env.repository_name }}-${{ env.hash }}-debug.apk
-            mv ${{ env.main_project_module }}/build/outputs/apk/release/*.apk ${{ env.repository_name }}-${{ env.hash }}-release.apk
-            mv ${{ env.main_project_module }}/build/outputs/bundle/release/*.aab ${{ env.repository_name }}-${{ env.hash }}.aab
+            mv ${{ env.main_project_module }}/build/outputs/bundle/debug/*.aab ${{ env.repository_name }}-${{ env.hash }}-debug.aab
 
-      - name: Upload APK Release - ${{ env.repository_name }}
+      - name: Upload APK Artifact - ${{ env.repository_name }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.repository_name }}-${{ env.hash }}-release
-          path: ${{ env.repository_name }}-${{ env.hash }}-release.apk
-
-      - name: Upload APK Debug - ${{ env.repository_name }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.repository_name }}-${{ env.hash }}-debug
+          name: ${{ env.repository_name }}-${{ env.hash }}-APK
           path: ${{ env.repository_name }}-${{ env.hash }}-debug.apk
 
-      - name: Upload AAB (App Bundle) Release - ${{ env.repository_name }}
+      - name: Upload AAB Artifact - ${{ env.repository_name }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.repository_name }}-${{ env.hash }}-AAB
-          path: ${{ env.repository_name }}-${{ env.hash }}.aab
+          path: ${{ env.repository_name }}-${{ env.hash }}-debug.aab
 
-      - name: Release
+      - name: Upload Release Assets
         uses: softprops/action-gh-release@v1
         if: ${{ github.ref_type == 'tag' }}
         with:
           files: |
             ${{ env.repository_name }}-${{ env.hash }}-release.apk
-            ${{ env.repository_name }}-${{ env.hash }}.aab
+            ${{ env.repository_name }}-${{ env.hash }}-release.aab

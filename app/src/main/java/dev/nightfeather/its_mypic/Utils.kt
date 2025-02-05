@@ -10,6 +10,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.AssetManager
 import android.graphics.drawable.Icon
+import android.icu.text.Transliterator
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
@@ -22,7 +23,7 @@ import androidx.core.content.FileProvider
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import com.google.gson.GsonBuilder
+import com.google.gson.stream.JsonReader
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
@@ -140,7 +141,7 @@ object Utils {
             val imageFile = File(cacheDir, "copiedImage.jpg")
 
             val request = Request.Builder()
-                .url(imageData.toUrl())
+                .url(imageData.sourceUrl)
                 .build()
 
             httpClient.newCall(request).execute().use { response ->
@@ -192,7 +193,7 @@ object Utils {
             val imageFile = File(downloadDir, "${imageName}.jpg")
 
             val request = Request.Builder()
-                .url(imageData.toUrl())
+                .url(imageData.sourceUrl)
                 .build()
 
             httpClient.newCall(request).execute().use { response ->
@@ -212,14 +213,15 @@ object Utils {
 
     object Asset {
         fun loadImageData(assets: AssetManager): List<ImageData> {
-            val jsonReader = assets.open("imgData/data.json").bufferedReader()
-            val gson = GsonBuilder().create()
-            val result = gson.fromJson(
-                jsonReader.readText(),
-                Array<ImageData>::class.java
-            ).toList()
+            val jsonReader = JsonReader(assets.open("imgData/data.json").bufferedReader())
+            val result: MutableList<ImageData> = mutableListOf()
+            jsonReader.beginArray()
+            while (jsonReader.hasNext()) {
+                result.add(ImageData(reader = jsonReader))
+            }
+            jsonReader.endArray()
             jsonReader.close()
-            return result
+            return result.toList()
         }
     }
 
@@ -252,8 +254,20 @@ object Utils {
     }
 
     object StringSearch {
+        private val transliterator: Transliterator? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            Transliterator.getInstance("Simplified-Traditional")
+        } else {
+            null
+        }
+
         fun formatText(text: String): String {
-            return text
+            var formattedText = text
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                formattedText = transliterator?.transliterate(text).orEmpty()
+            }
+
+            return formattedText
                 .lowercase()
                 .replace("妳", "你")
                 .replace("\n", "")
