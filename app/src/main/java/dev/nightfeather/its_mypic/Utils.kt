@@ -16,9 +16,12 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.Settings
+import android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.app.ActivityCompat.startActivityForResult
 import androidx.core.content.FileProvider
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
@@ -27,6 +30,7 @@ import com.google.gson.stream.JsonReader
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
+
 
 object Utils {
     private val httpClient = OkHttpClient()
@@ -236,6 +240,18 @@ object Utils {
             (context as Activity).startActivityForResult(intent, 1)
 
             return Settings.canDrawOverlays(context)
+        }
+
+        fun checkStoragePermission(context: Context) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return
+
+            if (Environment.isExternalStorageManager()) return
+
+            val intent = Intent(
+                Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+                Uri.parse("package:${context.packageName}")
+            )
+            (context as Activity).startActivityForResult(intent, 1)
         }
 
         @Composable

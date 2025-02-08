@@ -19,6 +19,7 @@ https://github.com/user-attachments/assets/156e8a45-c4a4-4afa-bdf2-6c5cbfa521b9
       * Uppercase -> Lowercase
       * 妳 -> 你 / 你 -> 妳
       * `\n`, `,`, ` ` -> `Empty`
+      * `zhHans` -> `zhHant` (Android 10 以上)
   * 圖片
     * 點按複製圖片
     * 長按下載圖片 (`/Downloads/ItsMyPic`)
@@ -35,5 +36,8 @@ https://github.com/user-attachments/assets/156e8a45-c4a4-4afa-bdf2-6c5cbfa521b9
 
 ## Roadmap
 * [x] Download Image
-* [ ] Search Histroy
-* [ ] Improved Search Algo
+* [x] zhHans Support
+* [ ] Copy Image Link
+* [ ] Search History
+* [ ] Filter by Episode / Character
+* [ ] Improve Search Algorithm

@@ -20,6 +20,16 @@ jobs:
       - name: Set Hash as Env Variable
         run: echo "hash=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "zulu"
+          java-version: "17"
+          cache: "gradle"
+
+      - name: Change Wrapper Permissions
+        run: chmod +x ./gradlew
+
       - name: Write Signing Config
         if: ${{ github.ref_type == 'tag' }}
         run: |
@@ -57,16 +67,6 @@ jobs:
             echo ${{ secrets.KEYSTORE }} | base64 -d > githubKeystore.jks
             fi
 
-      - name: Setup JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: "zulu"
-          java-version: "17"
-          cache: "gradle"
-
-      - name: Change Wrapper Permissions
-        run: chmod +x ./gradlew
-
       - name: Build Gradle Project
         run: ./gradlew build
 
@@ -95,6 +95,14 @@ jobs:
             mv ${{ env.main_project_module }}/build/outputs/apk/debug/*.apk ${{ env.repository_name }}-${{ env.hash }}-debug.apk
             mv ${{ env.main_project_module }}/build/outputs/bundle/debug/*.aab ${{ env.repository_name }}-${{ env.hash }}-debug.aab
 
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v1
+        if: ${{ github.ref_type == 'tag' }}
+        with:
+          files: |
+            ${{ env.repository_name }}-${{ env.hash }}-release.apk
+            ${{ env.repository_name }}-${{ env.hash }}-release.aab
+
       - name: Upload APK Artifact - ${{ env.repository_name }}
         uses: actions/upload-artifact@v4
         with:
@@ -106,11 +114,3 @@ jobs:
         with:
           name: ${{ env.repository_name }}-${{ env.hash }}-AAB
           path: ${{ env.repository_name }}-${{ env.hash }}-debug.aab
-
-      - name: Upload Release Assets
-        uses: softprops/action-gh-release@v1
-        if: ${{ github.ref_type == 'tag' }}
-        with:
-          files: |
-            ${{ env.repository_name }}-${{ env.hash }}-release.apk
-            ${{ env.repository_name }}-${{ env.hash }}-release.aab
