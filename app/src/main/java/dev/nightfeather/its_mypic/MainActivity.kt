@@ -44,7 +44,6 @@ import coil3.compose.AsyncImage
 import dev.nightfeather.its_mypic.ui.theme.ItsMyPicAndroidTheme
 
 class MainActivity : ComponentActivity() {
-
     @Composable
     fun InfoDialog(state: MutableState<Boolean>, title: String, text: String) {
         AlertDialog(
