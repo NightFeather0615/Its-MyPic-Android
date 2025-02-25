@@ -28,7 +28,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
 
-
 object Utils {
     private val httpClient = OkHttpClient()
 
@@ -283,40 +282,31 @@ object Utils {
             return formattedText
                 .lowercase()
                 .replace("妳", "你")
+                .replace("她", "他")
+                .replace("甚麼", "什麼")
                 .replace("\n", "")
                 .replace(",", "")
                 .replace(" ", "")
         }
 
-        fun containsApproximateSubstring(text: String, query: String): Boolean {
-            if (query.isEmpty()) return true
-            if (text.length < query.length) return false
-
-            for (i in 0..text.length - query.length) {
-                val substring = text.substring(i, i + query.length)
-                if (levenshteinDistance(query, substring)) {
-                    return true
+        fun calcDistance(text: String, query: String): Pair<Int, Int> {
+            if (query.isEmpty()) return Pair(0, 0)
+            val queryList = query.asIterable().toMutableList()
+            var dist = 0
+            var match = 0
+            for (textChar in text.asIterable().withIndex()) {
+                if (queryList.isEmpty()) {
+                    val remainDist = text.length - textChar.index
+                    return Pair(match, dist + remainDist)
+                }
+                if (queryList.remove(textChar.value)) {
+                    match += 1
+                } else {
+                    dist += 1
                 }
             }
-            return false
-        }
 
-        private fun levenshteinDistance(s1: String, s2: String): Boolean {
-            val dp = Array(s1.length + 1) { IntArray(s2.length + 1) }
-            for (i in 0..s1.length) {
-                for (j in 0..s2.length) {
-                    dp[i][j] = when {
-                        i == 0 -> j
-                        j == 0 -> i
-                        else -> minOf(
-                            dp[i - 1][j - 1] + if (s1[i - 1] == s2[j - 1]) 0 else 1,
-                            dp[i - 1][j] + 1,
-                            dp[i][j - 1] + 1
-                        )
-                    }
-                }
-            }
-            return dp[s1.length][s2.length] == 0
+            return Pair(match, dist)
         }
     }
 }

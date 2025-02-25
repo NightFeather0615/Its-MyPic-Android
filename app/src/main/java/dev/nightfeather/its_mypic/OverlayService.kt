@@ -40,7 +40,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -90,16 +89,14 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
     private var composeViewOwner: ComposeViewOwner? = null
     private var imageData: List<ImageData> = listOf()
 
+    @OptIn(ExperimentalFoundationApi::class)
     @Composable
-    @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
     private fun ImageBrowseDialog(isSingle: Boolean) {
         val localContext = LocalContext.current
         val localClipboardManager = LocalClipboardManager.current
         val localConfig = LocalConfiguration.current
 
         val screenWidth = localConfig.screenWidthDp
-
-        val searchViewModel = SearchViewModel(imageData)
 
         val coroutineScope = rememberCoroutineScope()
 
@@ -111,6 +108,11 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
         }
 
         val searchResultScrollState = rememberLazyListState()
+        val searchViewModel = SearchViewModel(
+            imageData,
+            searchResultScrollState,
+            coroutineScope
+        )
         val searchQueryText by searchViewModel.queryText.collectAsState()
         val imageSearchResult by searchViewModel.searchResult.collectAsState()
 
@@ -263,8 +265,10 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
                             )
                         },
                         shape = RoundedCornerShape(60.dp),
-                        colors = TextFieldDefaults.textFieldColors(
-                            containerColor = Color(0xFF565e71),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFF565e71),
+                            unfocusedContainerColor = Color(0xFF565e71),
+                            disabledContainerColor = Color(0xFF565e71),
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color.White,
                             disabledTextColor = Color.Transparent,

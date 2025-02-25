@@ -11,23 +11,23 @@ const val URL_IMAGE_FORMAT = "jpg"
 @Stable
 class ImageData(reader: JsonReader) {
     val text: String
-    val formattedText: String
+    private val formattedText: String
     val episode: String
     val frameStart: Int
-    val frameEnd: Int
-    val segmentId: Int
+    private val frameEnd: Int
+    private val segmentId: Int
     val sourceUrl: String
 
     init {
-        var text: String = ""
-        var episode: String = ""
-        var frameStart: Int = 0
-        var frameEnd: Int = 0
-        var segmentId: Int = 0
+        var text = ""
+        var episode = ""
+        var frameStart = 0
+        var frameEnd = 0
+        var segmentId = 0
 
         reader.beginObject()
         while (reader.hasNext()) {
-            val name = reader.nextName();
+            val name = reader.nextName()
             when (name) {
                 "text" -> {
                     text = reader.nextString()
@@ -57,8 +57,8 @@ class ImageData(reader: JsonReader) {
         this.sourceUrl = "$URL_SCHEME://$URL_BASE/$URL_PATH/${episode}_${frameStart}.$URL_IMAGE_FORMAT"
     }
 
-    fun isMatchWithQuery(queryString: String): Boolean {
-        return Utils.StringSearch.containsApproximateSubstring(
+    fun calcDistanceWithQuery(queryString: String): Pair<Int, Int> {
+        return Utils.StringSearch.calcDistance(
             text = formattedText,
             query = queryString
         )

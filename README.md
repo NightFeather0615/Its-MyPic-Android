@@ -15,11 +15,6 @@ https://github.com/user-attachments/assets/156e8a45-c4a4-4afa-bdf2-6c5cbfa521b9
     * 點擊「新增快速設定方塊」新增方塊
 * 互動
   * 在搜尋框輸入台詞即可開始搜尋
-    * 預設詞語替換
-      * Uppercase -> Lowercase
-      * 妳 -> 你 / 你 -> 妳
-      * `\n`, `,`, ` ` -> `Empty`
-      * `zhHans` -> `zhHant` (Android 10 以上)
   * 圖片
     * 點按複製圖片
     * 長按下載圖片 (`/Downloads/ItsMyPic`)
@@ -37,7 +32,7 @@ https://github.com/user-attachments/assets/156e8a45-c4a4-4afa-bdf2-6c5cbfa521b9
 ## Roadmap
 * [x] Download Image
 * [x] zhHans Support
+* [x] Improve Search Algorithm
 * [ ] Copy Image Link
 * [ ] Search History
-* [ ] Filter by Episode / Character
-* [ ] Improve Search Algorithm
+* [ ] Filter by Episode / Character (Awaiting upstream support)
