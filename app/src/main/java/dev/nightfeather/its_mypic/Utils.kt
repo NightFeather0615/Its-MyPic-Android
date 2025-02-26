@@ -6,16 +6,21 @@ import android.app.StatusBarManager
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.ComponentName
+import android.content.ContentUris
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.res.AssetManager
+import android.database.Cursor
 import android.graphics.drawable.Icon
 import android.icu.text.Transliterator
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
 import android.provider.Settings
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
@@ -167,17 +172,7 @@ object Utils {
     }
 
     object File {
-        private const val IMAGE_FOLDER = "ItsMyPic"
-
         fun downloadImageFromUrl(context: Context, imageData: ImageData) {
-            val picturesDir = Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_DOWNLOADS
-            )
-
-            val downloadDir = File(picturesDir, IMAGE_FOLDER)
-
-            if (!downloadDir.exists()) downloadDir.mkdirs()
-
             val imageName = if (
                 Preferences.getBoolean(
                     context,
@@ -185,29 +180,66 @@ object Utils {
                     true
                 )
             ) {
-                "myGoImage"
+                "myGoImage.jpg"
             } else {
-                "${imageData.episode}_${imageData.frameStart}"
+                "${imageData.episode}_${imageData.frameStart}.jpg"
             }
 
-            val imageFile = File(downloadDir, "${imageName}.jpg")
-
-            val request = Request.Builder()
-                .url(imageData.sourceUrl)
-                .build()
-
-            httpClient.newCall(request).execute().use { response ->
-                if (response.body != null) {
-                    imageFile.writeBytes(response.body!!.bytes())
-                }
+            val contentValues = ContentValues().apply {
+                put(MediaStore.DownloadColumns.DISPLAY_NAME, imageName)
+                put(MediaStore.DownloadColumns.MIME_TYPE, "image/jpeg")
+                put(MediaStore.DownloadColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
             }
 
-            MediaScannerConnection.scanFile(
-                context,
-                arrayOf(downloadDir.toString()),
-                arrayOf("image/jpeg"),
+            val extVolumeUri: Uri = MediaStore.Files.getContentUri("external")
+
+            val cursor: Cursor? = context.contentResolver.query(
+                extVolumeUri,
+                null,
+                MediaStore.DownloadColumns.DISPLAY_NAME + " = ? AND " + MediaStore.DownloadColumns.MIME_TYPE + " = ?",
+                arrayOf(imageName, "image/jpeg"),
                 null
             )
+
+            var fileUri: Uri? = null
+
+            if (cursor != null && cursor.count > 0) {
+                while (cursor.moveToNext()) {
+                    val nameIndex = cursor.getColumnIndex(MediaStore.DownloadColumns.DISPLAY_NAME)
+                    if (nameIndex > -1) {
+                        val displayName = cursor.getString(nameIndex)
+                        if (displayName == imageName) {
+                            val idIndex = cursor.getColumnIndex(MediaStore.DownloadColumns._ID)
+                            if (idIndex > -1) {
+                                val id = cursor.getLong(idIndex)
+                                fileUri = ContentUris.withAppendedId(extVolumeUri, id)
+                            }
+                        }
+                    }
+                }
+
+                cursor.close()
+            } else {
+                fileUri = context.contentResolver.insert(extVolumeUri, contentValues)
+            }
+
+            if (fileUri != null) {
+                val os = context.contentResolver.openOutputStream(fileUri, "wt")
+
+                if (os != null) {
+                    val request = Request.Builder()
+                        .url(imageData.sourceUrl)
+                        .build()
+
+                    httpClient.newCall(request).execute().use { response ->
+                        if (response.body != null) {
+                            os.write(response.body!!.bytes())
+                            os.close()
+                        }
+                    }
+                }
+
+            }
         }
     }
 
@@ -266,18 +298,10 @@ object Utils {
     }
 
     object StringSearch {
-        private val transliterator: Transliterator? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            Transliterator.getInstance("Simplified-Traditional")
-        } else {
-            null
-        }
+        private val transliterator = Transliterator.getInstance("Simplified-Traditional")
 
         fun formatText(text: String): String {
-            var formattedText = text
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                formattedText = transliterator?.transliterate(text).orEmpty()
-            }
+            var formattedText = transliterator?.transliterate(text).orEmpty()
 
             return formattedText
                 .lowercase()
