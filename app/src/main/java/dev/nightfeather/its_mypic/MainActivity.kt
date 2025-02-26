@@ -228,7 +228,6 @@ class MainActivity : ComponentActivity() {
                         )
                         Button(
                             onClick = {
-                                Utils.Permission.checkStoragePermission(localContext)
                                 if (Utils.Permission.checkOverlayPermission(localContext)) {
                                     Utils.Overlay.startService(localContext)
                                 }

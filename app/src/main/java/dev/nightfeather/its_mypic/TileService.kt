@@ -17,7 +17,6 @@ class TileService: TileService() {
 
     override fun onClick() {
         super.onClick()
-        Utils.Permission.checkStoragePermission(this)
         if (Utils.Permission.checkOverlayPermission(this)) {
             val dialog = Dialog(applicationContext)
             showDialog(dialog)

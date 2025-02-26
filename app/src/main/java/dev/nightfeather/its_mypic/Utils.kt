@@ -270,18 +270,6 @@ object Utils {
             return Settings.canDrawOverlays(context)
         }
 
-        fun checkStoragePermission(context: Context) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return
-
-            if (Environment.isExternalStorageManager()) return
-
-            val intent = Intent(
-                Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
-                Uri.parse("package:${context.packageName}")
-            )
-            (context as Activity).startActivityForResult(intent, 1)
-        }
-
         @Composable
         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
         @OptIn(ExperimentalPermissionsApi::class)
