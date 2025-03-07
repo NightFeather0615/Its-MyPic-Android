@@ -5,6 +5,7 @@
 https://github.com/user-attachments/assets/156e8a45-c4a4-4afa-bdf2-6c5cbfa521b9
 
 ## Download
+*［Google Play](https://play.google.com/store/apps/details?id=dev.nightfeather.its_mypic)
 * [GitHub Release](https://github.com/NightFeather0615/Its-MyPic-Android/releases/latest)
 
 ## Usage
