@@ -18,6 +18,7 @@ https://github.com/user-attachments/assets/156e8a45-c4a4-4afa-bdf2-6c5cbfa521b9
   * 在搜尋框輸入台詞即可開始搜尋
   * 圖片
     * 點按複製圖片
+    * 雙擊複製圖片連結
     * 長按下載圖片 (`/Downloads/ItsMyPic`)
   * 點擊空白處可關閉覆蓋層
 
@@ -34,6 +35,6 @@ https://github.com/user-attachments/assets/156e8a45-c4a4-4afa-bdf2-6c5cbfa521b9
 * [x] Download Image
 * [x] zhHans Support
 * [x] Improve Search Algorithm
-* [ ] Copy Image Link
-* [ ] Search History
-* [ ] Filter by Episode / Character (Awaiting upstream support)
+* [x] Copy Image Link
+* [ ] ~~Search History~~
+* [ ] ~~Filter by Episode / Character (Awaiting upstream support)~~
