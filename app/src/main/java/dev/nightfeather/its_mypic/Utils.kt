@@ -195,7 +195,7 @@ object Utils {
             val contentValues = ContentValues().apply {
                 put(MediaStore.DownloadColumns.DISPLAY_NAME, imageName)
                 put(MediaStore.DownloadColumns.MIME_TYPE, "image/jpeg")
-                put(MediaStore.DownloadColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                put(MediaStore.DownloadColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/ItsMyPic")
             }
 
             val extVolumeUri: Uri = MediaStore.Files.getContentUri("external")
