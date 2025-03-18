@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,6 +31,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,10 +40,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import dev.nightfeather.its_mypic.ui.theme.ItsMyPicAndroidTheme
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     @Composable
@@ -179,6 +183,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             val localContext = LocalContext.current
             val localConfig = LocalConfiguration.current
+            val localUrlHandler = LocalUriHandler.current
+
+            val coroutineScope = rememberCoroutineScope()
 
             val screenWidth = localConfig.screenWidthDp
 
@@ -203,6 +210,13 @@ class MainActivity : ComponentActivity() {
                                 .clip(
                                     shape = RoundedCornerShape(16.dp)
                                 )
+                                .clickable {
+                                    coroutineScope.launch {
+                                        localUrlHandler.openUri(
+                                            "https://github.com/NightFeather0615/Its-MyPic-Android"
+                                        )
+                                    }
+                                }
                         )
                         Spacer(
                             modifier = Modifier

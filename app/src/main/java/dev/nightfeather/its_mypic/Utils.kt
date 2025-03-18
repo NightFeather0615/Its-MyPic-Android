@@ -14,13 +14,11 @@ import android.content.res.AssetManager
 import android.database.Cursor
 import android.graphics.drawable.Icon
 import android.icu.text.Transliterator
-import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.provider.Settings
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
@@ -140,6 +138,15 @@ object Utils {
     }
 
     object Clipboard {
+        fun copyPlainText(clipboardManager: ClipboardManager, text: String) {
+            val item = ClipData.newPlainText(
+                text,
+                text
+            )
+
+            clipboardManager.setPrimaryClip(item)
+        }
+
         fun copyImageFromUrl(context: Context, clipboardManager: ClipboardManager, imageData: ImageData) {
             val cacheDir = File(context.cacheDir, "clipboard")
             if (!cacheDir.exists()) cacheDir.mkdirs()
@@ -289,7 +296,7 @@ object Utils {
         private val transliterator = Transliterator.getInstance("Simplified-Traditional")
 
         fun formatText(text: String): String {
-            var formattedText = transliterator?.transliterate(text).orEmpty()
+            val formattedText = transliterator?.transliterate(text).orEmpty()
 
             return formattedText
                 .lowercase()

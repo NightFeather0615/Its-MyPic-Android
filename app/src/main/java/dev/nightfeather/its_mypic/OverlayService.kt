@@ -117,8 +117,9 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
         val imageSearchResult by searchViewModel.searchResult.collectAsState()
 
         val downloadToast = Toast.makeText(localContext, "下載圖片...", Toast.LENGTH_SHORT)
-        val saveToast = Toast.makeText(localContext, "保存成功", Toast.LENGTH_SHORT)
-        val copyToast = Toast.makeText(localContext, "複製成功", Toast.LENGTH_SHORT)
+        val saveImageToast = Toast.makeText(localContext, "保存圖片成功", Toast.LENGTH_SHORT)
+        val copyImageToast = Toast.makeText(localContext, "複製圖片成功", Toast.LENGTH_SHORT)
+        val copyLinkToast = Toast.makeText(localContext, "複製連結成功", Toast.LENGTH_SHORT)
 
         AnimatedVisibility(
             visibleState = fadeInAnimateState,
@@ -184,7 +185,21 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
                                                     )
                                                 }
                                                 downloadToast.cancel()
-                                                copyToast.show()
+                                                copyImageToast.show()
+                                                if (isSingle) {
+                                                    stopService()
+                                                } else {
+                                                    removeOverlay()
+                                                }
+                                            }
+                                        },
+                                        onDoubleClick = {
+                                            coroutineScope.launch {
+                                                Utils.Clipboard.copyPlainText(
+                                                    clipboardManager = localClipboardManager.nativeClipboard,
+                                                    text = searchData.sourceUrl
+                                                )
+                                                copyLinkToast.show()
                                                 if (isSingle) {
                                                     stopService()
                                                 } else {
@@ -203,7 +218,7 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
                                                     )
                                                 }
                                                 downloadToast.cancel()
-                                                saveToast.show()
+                                                saveImageToast.show()
                                                 if (isSingle) {
                                                     stopService()
                                                 } else {
