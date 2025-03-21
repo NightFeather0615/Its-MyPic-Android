@@ -4,26 +4,31 @@ import androidx.compose.runtime.Stable
 import com.google.gson.stream.JsonReader
 
 const val URL_SCHEME = "https"
-const val URL_BASE = "mygodata.0m0.uk"
+const val URL_BASE = "mypic.0m0.uk"
 const val URL_PATH = "images"
-const val URL_IMAGE_FORMAT = "jpg"
 
 @Stable
 class ImageData(reader: JsonReader) {
     val text: String
     private val formattedText: String
-    val episode: String
-    val frameStart: Int
+    val season: Int
+    val episode: Int
+    private val frameStart: Int
+    val framePrefer: Int
     private val frameEnd: Int
     private val segmentId: Int
+    private val character: Int
     val sourceUrl: String
 
     init {
         var text = ""
-        var episode = ""
+        var season = 0
+        var episode = 0
         var frameStart = 0
+        var framePrefer = 0
         var frameEnd = 0
         var segmentId = 0
+        var character = 0
 
         reader.beginObject()
         while (reader.hasNext()) {
@@ -32,11 +37,17 @@ class ImageData(reader: JsonReader) {
                 "text" -> {
                     text = reader.nextString()
                 }
+                "season" -> {
+                    season = reader.nextInt()
+                }
                 "episode" -> {
-                    episode = reader.nextString()
+                    episode = reader.nextInt()
                 }
                 "frame_start" -> {
                     frameStart = reader.nextInt()
+                }
+                "frame_prefer" -> {
+                    framePrefer = reader.nextInt()
                 }
                 "frame_end" -> {
                     frameEnd = reader.nextInt()
@@ -44,17 +55,23 @@ class ImageData(reader: JsonReader) {
                 "segment_id" -> {
                     segmentId = reader.nextInt()
                 }
+                "character" -> {
+                    character = reader.nextInt()
+                }
             }
         }
         reader.endObject()
 
         this.text = text
         this.formattedText = Utils.StringSearch.formatText(text)
+        this.season = season
         this.episode = episode
         this.frameStart = frameStart
+        this.framePrefer = framePrefer
         this.frameEnd = frameEnd
         this.segmentId = segmentId
-        this.sourceUrl = "$URL_SCHEME://$URL_BASE/$URL_PATH/${episode}_${frameStart}.$URL_IMAGE_FORMAT"
+        this.character = character
+        this.sourceUrl = "$URL_SCHEME://$URL_BASE/$URL_PATH/${season}/${episode}/${framePrefer}"
     }
 
     fun calcDistanceWithQuery(queryString: String): Pair<Int, Int> {

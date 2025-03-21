@@ -197,7 +197,7 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
                                             coroutineScope.launch {
                                                 Utils.Clipboard.copyPlainText(
                                                     clipboardManager = localClipboardManager.nativeClipboard,
-                                                    text = searchData.sourceUrl
+                                                    text = searchData.sourceUrl + ".jpg"
                                                 )
                                                 copyLinkToast.show()
                                                 if (isSingle) {
@@ -232,7 +232,7 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     AsyncImage(
-                                        model = searchData.sourceUrl,
+                                        model = searchData.sourceUrl + ".webp",
                                         contentDescription = searchData.text,
                                         modifier = Modifier
                                             .width(280.dp)

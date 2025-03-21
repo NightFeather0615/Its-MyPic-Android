@@ -153,7 +153,7 @@ object Utils {
             val imageFile = File(cacheDir, "copiedImage.jpg")
 
             val request = Request.Builder()
-                .url(imageData.sourceUrl)
+                .url(imageData.sourceUrl + ".jpg")
                 .build()
 
             httpClient.newCall(request).execute().use { response ->
@@ -189,7 +189,7 @@ object Utils {
             ) {
                 "myGoImage.jpg"
             } else {
-                "${imageData.episode}_${imageData.frameStart}.jpg"
+                "${imageData.episode}_${imageData.framePrefer}.jpg"
             }
 
             val contentValues = ContentValues().apply {
@@ -235,7 +235,7 @@ object Utils {
 
                 if (os != null) {
                     val request = Request.Builder()
-                        .url(imageData.sourceUrl)
+                        .url(imageData.sourceUrl + ".jpg")
                         .build()
 
                     httpClient.newCall(request).execute().use { response ->
