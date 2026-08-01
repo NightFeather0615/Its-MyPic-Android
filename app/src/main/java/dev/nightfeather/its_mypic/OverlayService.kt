@@ -108,18 +108,20 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
         }
 
         val searchResultScrollState = rememberLazyListState()
-        val searchViewModel = SearchViewModel(
-            imageData,
-            searchResultScrollState,
-            coroutineScope
-        )
+        val searchViewModel = remember {
+            SearchViewModel(
+                imageData,
+                searchResultScrollState,
+                coroutineScope
+            )
+        }
         val searchQueryText by searchViewModel.queryText.collectAsState()
         val imageSearchResult by searchViewModel.searchResult.collectAsState()
 
-        val downloadToast = Toast.makeText(localContext, "下載圖片...", Toast.LENGTH_SHORT)
-        val saveImageToast = Toast.makeText(localContext, "保存圖片成功", Toast.LENGTH_SHORT)
-        val copyImageToast = Toast.makeText(localContext, "複製圖片成功", Toast.LENGTH_SHORT)
-        val copyLinkToast = Toast.makeText(localContext, "複製連結成功", Toast.LENGTH_SHORT)
+        val downloadToast = remember { Toast.makeText(localContext, "下載圖片...", Toast.LENGTH_SHORT) }
+        val saveImageToast = remember { Toast.makeText(localContext, "保存圖片成功", Toast.LENGTH_SHORT) }
+        val copyImageToast = remember { Toast.makeText(localContext, "複製圖片成功", Toast.LENGTH_SHORT) }
+        val copyLinkToast = remember { Toast.makeText(localContext, "複製連結成功", Toast.LENGTH_SHORT) }
 
         AnimatedVisibility(
             visibleState = fadeInAnimateState,
@@ -315,6 +317,11 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
     }
 
     private fun attachOverlay() {
+        val wm = windowManager ?: return
+
+        composeViewOwner?.onStart()
+        composeViewOwner?.onResume()
+
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -327,14 +334,20 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
         params.x = 0
         params.y = 0
 
-        windowManager!!.addView(dialogView, params)
+        wm.addView(dialogView, params)
 
         isOverlayShown = true
     }
 
     private fun removeOverlay() {
-        if (dialogView != null && isOverlayShown) {
-            windowManager?.removeViewImmediate(dialogView)
+        val view = dialogView
+        if (view != null && isOverlayShown) {
+            composeViewOwner?.onPause()
+            composeViewOwner?.onStop()
+
+            if (view.isAttachedToWindow) {
+                windowManager?.removeViewImmediate(view)
+            }
         }
         isOverlayShown = false
     }
@@ -415,24 +428,20 @@ class OverlayService: Service(), OnTouchListener, OnClickListener {
         stopForeground(STOP_FOREGROUND_REMOVE)
         windowManager = null
         isServiceRunning = false
+        stopSelf()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        super.onCreate()
+        if (intent == null) return START_NOT_STICKY
 
-        if (intent == null) throw Exception("Can't start OverlayService with null intent.")
+        when (intent.action) {
+            Action.STOP_SERVICE -> stopService()
 
-        if (
-            intent.action == Action.STOP_SERVICE
-        ) {
-            stopService()
-        }
-
-        if (
-            (intent.action == Action.START_SERVICE || intent.action == Action.SHOW_OVERLAY_SINGLE) &&
-            !isServiceRunning
-        ) {
-            initService(intent)
+            Action.START_SERVICE, Action.SHOW_OVERLAY_SINGLE -> {
+                if (!isServiceRunning) {
+                    initService(intent)
+                }
+            }
         }
 
         if (

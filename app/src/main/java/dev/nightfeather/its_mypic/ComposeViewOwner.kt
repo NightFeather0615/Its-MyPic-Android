@@ -19,9 +19,10 @@ import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
-class ComposeViewOwner:
+class ComposeViewOwner :
     LifecycleOwner, ViewModelStoreOwner, SavedStateRegistryOwner, OnBackPressedDispatcherOwner
 {
     override val onBackPressedDispatcher = OnBackPressedDispatcher()
@@ -29,6 +30,11 @@ class ComposeViewOwner:
     private val lifecycleRegistry = LifecycleRegistry(this)
     private val savedStateRegistryController = SavedStateRegistryController.create(this)
     private val store = ViewModelStore()
+
+    private var recomposer: Recomposer? = null
+    private var recomposeScope: CoroutineScope? = null
+    private var isCreated = false
+    private var isDestroyed = false
 
     override val lifecycle: Lifecycle
         get() = lifecycleRegistry
@@ -38,33 +44,47 @@ class ComposeViewOwner:
         get() = store
 
     fun onCreate() {
+        if (isCreated || isDestroyed) return
         savedStateRegistryController.performRestore(null)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
+        isCreated = true
     }
 
     fun onStart() {
+        if (!isCreated || isDestroyed) return
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
     }
 
     fun onResume() {
+        if (!isCreated || isDestroyed) return
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
     }
 
     fun onPause() {
+        if (!isCreated || isDestroyed) return
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
     }
 
     fun onStop() {
+        if (!isCreated || isDestroyed) return
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
     }
 
     fun onDestroy() {
+        if (isDestroyed) return
+        isDestroyed = true
+
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         store.clear()
+
+        recomposer?.close()
+        recomposeScope?.cancel()
+        recomposer = null
+        recomposeScope = null
     }
 
     fun attachToDecorView(decorView: View?) {
-        if (decorView == null) return
+        if (decorView == null || isDestroyed) return
 
         decorView.let {
             it.setViewTreeViewModelStoreOwner(this)
@@ -73,13 +93,18 @@ class ComposeViewOwner:
             it.setViewTreeOnBackPressedDispatcherOwner(this)
         }
 
-        val coroutineContext = AndroidUiDispatcher.CurrentThread
-        val runRecomposeScope = CoroutineScope(coroutineContext)
-        val recomposer = Recomposer(coroutineContext)
+        if (recomposer != null) return
 
-        decorView.compositionContext = recomposer
-        runRecomposeScope.launch {
-            recomposer.runRecomposeAndApplyChanges()
+        val coroutineContext = AndroidUiDispatcher.CurrentThread
+        val newRecomposeScope = CoroutineScope(coroutineContext)
+        val newRecomposer = Recomposer(coroutineContext)
+
+        decorView.compositionContext = newRecomposer
+        newRecomposeScope.launch {
+            newRecomposer.runRecomposeAndApplyChanges()
         }
+
+        recomposer = newRecomposer
+        recomposeScope = newRecomposeScope
     }
 }

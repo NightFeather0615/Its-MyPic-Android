@@ -1,8 +1,6 @@
 package dev.nightfeather.its_mypic
 
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -13,17 +11,16 @@ import kotlinx.coroutines.launch
 class SearchViewModel(
     imageData: List<ImageData>,
     resultScrollState: LazyListState,
-    coroutineScope: CoroutineScope
-): ViewModel() {
+    private val coroutineScope: CoroutineScope
+) {
     private val _queryText = MutableStateFlow("")
     val queryText = MutableStateFlow("")
 
-    private val _coroutineScope = coroutineScope
-    private val _resultScrollState = resultScrollState
+    private val resultScrollState = resultScrollState
 
-    private val _imageData = MutableStateFlow(imageData)
+    private val imageDataFlow = MutableStateFlow(imageData)
     val searchResult = _queryText
-        .combine(_imageData) { query, imageData ->
+        .combine(imageDataFlow) { query, imageData ->
             if (query.isBlank()) {
                 imageData
             } else {
@@ -46,16 +43,16 @@ class SearchViewModel(
             }
         }
         .stateIn(
-            viewModelScope,
+            coroutineScope,
             SharingStarted.WhileSubscribed(5000),
-            _imageData.value
+            imageDataFlow.value
         )
 
     fun onQueryTextChanged(query: String) {
         queryText.value = query
         _queryText.value = Utils.StringSearch.formatText(query)
-        _coroutineScope.launch {
-            _resultScrollState.animateScrollToItem(0)
+        coroutineScope.launch {
+            resultScrollState.animateScrollToItem(0)
         }
     }
 }

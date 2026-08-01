@@ -272,7 +272,10 @@ object Utils {
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                 Uri.parse("package:${context.packageName}")
             )
-            (context as Activity).startActivityForResult(intent, 1)
+            if (context !is Activity) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
 
             return Settings.canDrawOverlays(context)
         }
